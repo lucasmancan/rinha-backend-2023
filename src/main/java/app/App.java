@@ -20,6 +20,8 @@ public class App extends Jooby {
 
     public static void main(final String[] args) {
         System.setProperty("org.jooq.no-logo", "true");
+        System.setProperty("org.jooq.no-tips", "true");
+
         runApp(args, App::new);
     }
 }

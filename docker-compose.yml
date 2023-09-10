@@ -96,11 +96,22 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
+      test: ["CMD-SHELL", "pg_isready", "-U", "rinhaapp"]
       interval: 5s
       timeout: 5s
       retries: 20
       start_period: 10s
+  redis:
+    image: redis
+    hostname: redis
+    ports:
+      - "6379:6379"
+    command: redis-server --save "" --appendonly no --maxclients 20000
+    deploy:
+      resources:
+        limits:
+          cpus: '0.15'
+          memory: '0.3GB'
 
 networks:
   app-network:

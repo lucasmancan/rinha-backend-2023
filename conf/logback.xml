@@ -14,15 +14,15 @@
     <appender-ref ref="STDOUT" />
   </root>
 
-  <Logger name="org.jooq.tools.LoggerListener" level="debug">
-    <AppenderRef ref="Console"/>
-  </Logger>
+<!--  <Logger name="org.jooq.tools.LoggerListener" level="debug">-->
+<!--    <AppenderRef ref="Console"/>-->
+<!--  </Logger>-->
 
-  <Logger name="org.jooq" level="debug">
-    <AppenderRef ref="Console"/>
-  </Logger>
+<!--  <Logger name="org.jooq" level="debug">-->
+<!--    <AppenderRef ref="Console"/>-->
+<!--  </Logger>-->
 
-  <Root level="info">
-    <AppenderRef ref="Console"/>
-  </Root>
+<!--  <Root level="info">-->
+<!--    <AppenderRef ref="Console"/>-->
+<!--  </Root>-->
 </configuration>

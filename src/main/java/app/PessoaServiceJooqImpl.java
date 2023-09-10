@@ -29,13 +29,18 @@ public class PessoaServiceJooqImpl implements PessoaService {
     @Override
     public Pessoa salvar(Pessoa pessoa) {
 
-        var id = UUID.randomUUID().toString();
+        var id = UUID.randomUUID();
+
+        String joinStack = null;
+        if(pessoa.stack() != null){
+            joinStack = String.join(",", pessoa.stack());
+        }
 
         context.insertInto(table("pessoas"), field("id"), field("nome"), field("apelido"), field("nascimento"), field("stack"))
-                .values(UUID.randomUUID(), pessoa.nome(), pessoa.apelido(), pessoa.nascimento(), String.join(",", pessoa.stack()))
+                .values(id, pessoa.nome(), pessoa.apelido(), pessoa.nascimento(), joinStack)
                 .execute();
 
-        return new Pessoa(id, pessoa.nome(), pessoa.apelido(), pessoa.nascimento(), pessoa.stack());
+        return new Pessoa(id.toString(), pessoa.nome(), pessoa.apelido(), pessoa.nascimento(), pessoa.stack());
     }
 
     @Override
@@ -65,10 +70,16 @@ public class PessoaServiceJooqImpl implements PessoaService {
     }
 
     private Pessoa recordToPessoa(Record record1) {
+        List<String> stack = null;
+
+        if(record1.get("stack") != null){
+            stack = Arrays.asList(record1.get("stack", String.class).split(","));
+
+        }
         return new Pessoa(record1.get("id", String.class),
                 record1.get("nome", String.class),
                 record1.get("apelido", String.class),
-                record1.get("nascimento", LocalDate.class),
-                Arrays.asList(record1.get("stack", String.class).split(",")));
+                record1.get("nascimento", LocalDate.class),stack
+        );
     }
 }

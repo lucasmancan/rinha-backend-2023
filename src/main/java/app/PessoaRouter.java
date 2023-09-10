@@ -1,16 +1,19 @@
 package app;
 
 import io.jooby.Jooby;
+import org.jooq.exception.IntegrityConstraintViolationException;
 
 import javax.sql.DataSource;
 import java.util.List;
 import java.util.UUID;
 
+import static java.lang.String.format;
+
 public class PessoaRouter extends Jooby {
     {
         PessoaService service = new PessoaServiceJooqImpl(require(DataSource.class));
 
-        get("/contagem-pessoas", (ctx) -> new ContagemPessoasResponse(service.contarPessoas()));
+        get("/contagem-pessoas", (ctx) -> service.contarPessoas());
 
         path("/pessoas", () -> {
             get("/{id}", (ctx -> {
@@ -38,20 +41,33 @@ public class PessoaRouter extends Jooby {
             }));
 
             post("/", (ctx -> {
+                Pessoa pessoaRequest = null;
+                try{
+                    pessoaRequest = ctx.body(Pessoa.class);
 
-                var pessoaRequest = ctx.body(Pessoa.class);
-
-                if (pessoaRequest.apelido() == null || pessoaRequest.apelido().isBlank() || pessoaRequest.apelido().length() > 32
-                        || pessoaRequest.nome() == null || pessoaRequest.nome().isBlank() || pessoaRequest.nome().length() > 100 || invalidStack(pessoaRequest.stack())) {
+                    System.out.println();
+                }catch (Exception e){
                     ctx.setResponseCode(400);
                     return "";
                 }
 
+                if (pessoaRequest.apelido() == null || pessoaRequest.apelido().isBlank() || pessoaRequest.apelido().length() > 32
+                        || pessoaRequest.nome() == null || pessoaRequest.nome().isBlank() || pessoaRequest.nome().length() > 100 || invalidStack(pessoaRequest.stack())) {
+                    ctx.setResponseCode(422);
+                    return "";
+                }
 
-                var pessoa = service.salvar(pessoaRequest);
+                try {
+                    var pessoa = service.salvar(pessoaRequest);
 
-                ctx.setResponseCode(201);
-                return pessoa;
+                    ctx.setResponseCode(201);
+                    ctx.setResponseHeader("Location", format("/pessoas/%s", pessoa.id()));
+                    return pessoa;
+                } catch (IntegrityConstraintViolationException e) {
+                    ctx.setResponseCode(422);
+                    return "";
+                }
+
             }));
         });
 
