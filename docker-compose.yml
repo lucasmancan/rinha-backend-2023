@@ -7,11 +7,14 @@ services:
     environment:
       - SERVER_PORT=8080
       - DATABASE_URL=jdbc:postgresql://db-postgresql:5432/rinhadb
+      - REDIS_URL=redis://redis-db:6379
       - DATABASE_USERNAME=rinhaapp
       - DATABASE_PASSWORD=root
     depends_on:
       db-postgresql:
         condition: service_healthy
+      redis-db:
+        condition: service_started
     ulimits:
       nofile:
         soft: 1000000
@@ -36,11 +39,14 @@ services:
     environment:
       - SERVER_PORT=8080
       - DATABASE_URL=jdbc:postgresql://db-postgresql:5432/rinhadb
+      - REDIS_URL=redis://redis-db:6379
       - DATABASE_USERNAME=rinhaapp
       - DATABASE_PASSWORD=root
     depends_on:
       db-postgresql:
         condition: service_healthy
+      redis-db:
+        condition: service_started
     ulimits:
       nofile:
         soft: 1000000
@@ -91,7 +97,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.8'
+          cpus: '0.5'
           memory: '1GB'
     networks:
       - app-network
@@ -101,16 +107,19 @@ services:
       timeout: 5s
       retries: 20
       start_period: 10s
-  redis:
+
+  redis-db:
     image: redis
-    hostname: redis
+    hostname: redis-db
     ports:
       - "6379:6379"
     command: redis-server --save "" --appendonly no --maxclients 20000
+    networks:
+      - app-network
     deploy:
       resources:
         limits:
-          cpus: '0.15'
+          cpus: '0.3'
           memory: '0.3GB'
 
 networks:

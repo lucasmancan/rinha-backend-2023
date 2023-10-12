@@ -1,6 +1,7 @@
 package app;
 
 import io.jooby.Jooby;
+import io.lettuce.core.api.StatefulRedisConnection;
 import org.jooq.exception.IntegrityConstraintViolationException;
 
 import javax.sql.DataSource;
@@ -11,12 +12,13 @@ import static java.lang.String.format;
 
 public class PessoaRouter extends Jooby {
     {
-        PessoaService service = new PessoaServiceJooqImpl(require(DataSource.class));
+        PessoaService service = new PessoaServiceJooqImpl(require(DataSource.class), require(StatefulRedisConnection.class));
 
         get("/contagem-pessoas", (ctx) -> service.contarPessoas());
 
         path("/pessoas", () -> {
             get("/{id}", (ctx -> {
+
 
                 var optionalPessoa = service.buscarPorId(UUID.fromString(ctx.path("id").value()));
 

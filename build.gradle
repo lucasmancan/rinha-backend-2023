@@ -46,6 +46,7 @@ dependencies {
 
   implementation "io.jooby:jooby-hikari"
   implementation "io.jooby:jooby-netty"
+  implementation "io.jooby:jooby-redis"
   implementation "io.jooby:jooby-logback"
   implementation 'io.jooby:jooby-jackson'
   testImplementation "org.junit.jupiter:junit-jupiter-api:5.10.0"

@@ -1,5 +1,10 @@
 package app;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.sync.RedisCommands;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.jooq.DSLContext;
@@ -20,14 +25,16 @@ import static org.jooq.impl.DSL.*;
 @Singleton
 public class PessoaServiceJooqImpl implements PessoaService {
     private final DSLContext context;
+    private final StatefulRedisConnection redisConnection;
 
     @Inject
-    public PessoaServiceJooqImpl(DataSource dataSource) {
+    public PessoaServiceJooqImpl(DataSource dataSource, StatefulRedisConnection redisConnection) {
         this.context = DSL.using(dataSource, SQLDialect.POSTGRES);
+        this.redisConnection = redisConnection;
     }
 
     @Override
-    public Pessoa salvar(Pessoa pessoa) {
+    public Pessoa salvar(Pessoa pessoa) throws JsonProcessingException {
 
         var id = UUID.randomUUID();
 
@@ -40,16 +47,32 @@ public class PessoaServiceJooqImpl implements PessoaService {
                 .values(id, pessoa.nome(), pessoa.apelido(), pessoa.nascimento(), joinStack)
                 .execute();
 
-        return new Pessoa(id.toString(), pessoa.nome(), pessoa.apelido(), pessoa.nascimento(), pessoa.stack());
+
+        var pessoaSalva = new Pessoa(id.toString(), pessoa.nome(), pessoa.apelido(), pessoa.nascimento(), pessoa.stack());
+
+        RedisCommands<String, String> commands = redisConnection.sync();
+
+        var string  = (String) mapper.writeValueAsString(pessoaSalva);
+        commands.set(pessoaSalva.id(), string);
+
+        return pessoaSalva;
     }
+    private final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     @Override
-    public Optional<Pessoa> buscarPorId(UUID id) {
+    public Optional<Pessoa> buscarPorId(UUID id) throws JsonProcessingException {
+
+        RedisCommands<String, String> commands = (RedisCommands<String, String>) redisConnection.sync();
+        var pessoaEmCache =  commands.get(id.toString());
+
+        if(pessoaEmCache != null)
+            return Optional.of(mapper.readValue(pessoaEmCache, Pessoa.class));
 
         Record record = context.fetchOne(table("pessoas"), field("id").eq(id));
 
         return Optional.ofNullable(record).map(this::recordToPessoa);
     }
+
 
     @Override
     public List<Pessoa> buscarPorTermo(String termo) {
@@ -63,6 +86,7 @@ public class PessoaServiceJooqImpl implements PessoaService {
                 .collect(Collectors.toList());
 
     }
+
 
     @Override
     public Integer contarPessoas() {
